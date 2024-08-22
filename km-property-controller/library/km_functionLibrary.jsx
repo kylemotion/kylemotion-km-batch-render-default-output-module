@@ -72,5 +72,120 @@ function copyToClipboard(string) {
 	system.callSystem(cmd);
 }
 
-///// Populate Dropdown UI
 
+
+
+//// Populate Dropdown Expression Control
+function buildDropdownMenu(layersel, ddParams){
+         
+        var selLayers = new Array();
+
+        for(var i = 1; i<=comp.layersel; i++){
+	    selLayers.push(layerEffects.property(i))
+
+        
+        }
+
+        var finalDropdown
+        var ddBuild = finalDropdown.property(1).setPropertyParameters(ddParams);
+        ddBuild.propertyGroup(1).name = "Enter Dropdown Name;
+        return finalDropdown
+	}
+
+
+
+///// Populate Script UI DD
+
+var layerList = init(mainButtonDD);
+
+
+
+function init(dropDown){
+    var globalLayers = [];
+    var globalLayerNames = [];
+    dropDown.removeAll();
+    
+    var existingComp = app.project.activeItem;
+
+    if(existingComp && existingComp instanceof CompItem){
+	for(var i = 1; i<=existingComp.numLayers; i++){
+	    globalLayers.push(existingComp.layer(i));
+	    globalLayerNames.push(i.toString() + ". " + existingComp.layer(i).name);
+	    dropDown.add("item", globalLayerNames[globalLayerNames.length-1])
+
+	}
+    } 
+    
+    return dropDown.selection = 0;
+    }
+
+
+/// Convert dropdown UI to text - no numbers in front
+
+var dropdownSel = dropDown.selection;
+
+function dropDownSelection(dropDownSel){
+    var dropwDownSrc = dropDownSel.selection.text;
+    var ddSplit = dropwDownSrc.split(" ");
+    var ddSlice = ddSplit.slice(1);
+    var ddJoin = ddSlice.join(" ");
+    return ddJoin
+}
+
+
+//// return selected properties
+
+function getSelectedProperties() {
+    var comp = app.project.activeItem;
+    var selectedProperties = comp.selectedProperties;
+    return selectedProperties
+}
+
+
+
+/// referesh dropdown menu UI
+refreshButton.onClick = function(){
+    try{
+	app.beginUndoGroup("refresh Dropdown");
+	var comp = app.project.activeItem;
+
+	if (!(comp && comp instanceof CompItem)) {
+	    alert("Open a comp first!")
+	    return
+	}
+
+	init(mainButtonDD)
+    } catch(error) {
+	alert("An error occured on line: " + error.line + "\nError message: " + error.message);
+	} finally {
+	// this always runs no matter what
+	app.endUndoGroup()
+      }
+}    
+
+
+//// add control layer to composition
+
+addControlLayerButton.onClick = function(){
+    try{
+	app.beginUndoGroup("Add Controller");
+	var comp = app.project.activeItem;
+
+	if (!(comp && comp instanceof CompItem)) {
+	    alert("Open a comp first!")
+	    return
+	}
+	
+
+
+	createControlLayer = comp.layers.addShape();
+	createControlLayer.name = "Controls";
+
+	init(mainButtonDD)
+    } catch(error) {
+	alert("An error occurred on line: " + error.line + "\nError message: " + error.message);
+	} finally {
+	// this always runs no matter what
+	app.endUndoGroup()
+      }
+}
