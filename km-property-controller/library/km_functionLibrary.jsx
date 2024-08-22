@@ -53,3 +53,24 @@ function hexToRGB(hexValue) {
     }
 
 })(this);
+
+
+
+////// Copy to Clipboard
+
+function copyToClipboard(string) {
+	var cmd, isWindows;
+
+	string = (typeof string === 'string') ? string : string.toString();
+	isWindows = $.os.indexOf('Windows') !== -1;
+	
+	cmd = 'echo "' + string + '" | pbcopy';
+	if (isWindows) {
+		cmd = 'cmd.exe /c cmd.exe /c "echo ' + string + ' | clip"';
+	}
+
+	system.callSystem(cmd);
+}
+
+///// Populate Dropdown UI
+
