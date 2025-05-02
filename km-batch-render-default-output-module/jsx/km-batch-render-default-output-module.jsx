@@ -14,81 +14,93 @@
 */
 
 
-(function(thisObj){
+(function(){
+
+    //@include "./library/km-functionLibrary.jsx"
 
 
-    var scriptName = "km-batch-render-default-output-module";
-
-    createUI(thisObj)
-
-    function createUI(thisObj){
-        var win = thisObj instanceof Panel
-        ? thisObj
-        : new Window("window", scriptName, undefined, {
-            resizeable: true
-        })
-
-    win.orientation = 'column';
-    win.alignChildren = ["left", "top"];
-
-    var mainGroup = win.add("group", undefined, "Main Group");
-    mainGroup.orientation = 'column';
-
-
-    var applyGroup = mainGroup.add("group", undefined, "Apply Group");
-    applyGroup.orientation = 'row';
-    var applyButton = applyGroup.add("button", undefined, "Apply");
-    applyButton.preferredSize = [-1,30];
-    applyButton.helpTip = "Click: Apply markers to selected layers.\rShift+Click: Apply markers to beginning of a comp."
-
-
-    applyButton.onClick = function(){
     try {
-        app.beginUndoGroup("What script does");
+        app.beginUndoGroup("Batch export renders with default render token");
+        var proj = kmFunctions.getProj();
+        if(!proj) return null
+        var comps = kmFunctions.getComps(proj);
+        if(!comps || comps.compItems.length === 0) return null;
+        var setWorkArea = setCompWorkArea(comps.compItems);
+        var renderQueue = proj.renderQueue;
+        var addToQueue = addToRenderQueue(comps.compItems,renderQueue);
+        var setFilePath = setOutputFilePath(renderQueue);
 
-        var activeComp = app.project.activeItem;
-        var curLayerSel = activeComp.selectedLayers;
-
-        if(!(activeComp && activeComp instanceof CompItem)){
-            alert("Please open a comp first")
-            return
-        }
-
-        // if(!curLayerSel.length){
-        //     alert("Select atleast 1 layer first");
-        //     return
-        // }
-
-        name('#98745d')
-
-      } catch(error) {
+    } catch(error) {
         alert("An error occured on line: " + error.line + "\nError message: " + error.message);
-      } finally {
+    } finally {
         // this always runs no matter what
         app.endUndoGroup()
+    }
+    
+    /// RENDERRRRRR ////
+    app.beginSuppressDialogs();
+    renderQueue.render();
+    app.endSuppressDialogs(false);
+
+    var alertMessage = 
+        'Success!\r\r\
+        Your compositions:\r\r\
+        '+setFilePath.outputFileNames.join("\r")+'\r\r\
+        Have been exported to:\r\r\
+        '+setFilePath.outputFilePath+'\r\r\
+        Click okay to reveal render location\
+        ';
+
+    alert(alertMessage);
+    var destinationFolder = new Folder(setFilePath.outputFilePath);
+    destinationFolder.execute();
+      
+      function addToRenderQueue(comp,queue){
+
+        for(var b = queue.numItems; b>0; b--){
+            var rqItem = queue.item(b);
+            rqItem.remove();
+        }
+
+        for(var i=0; i<comp.length; i++){
+            var renderQueueComp = comp[i];
+            queue.items.add(renderQueueComp);
+        }
+
+        return
+
+      }
+
+      function setCompWorkArea(comp){
+        for(var i = 0; i<comp.length; i++){
+            var item = comp[i];
+            item.workAreaStart = item.duration-item.duration;
+            item.workAreaDuration = item.duration;
+        }
+        return
+      }
+
+      function setOutputFilePath(queue){
+        var outputFileNames = [];
+        for(var i=1; i<=queue.numItems;i++){
+            var item = queue.item(i);
+            var outputModule = item.outputModule(1);
+            outputModuleFile = File.decode(outputModule.file);
+            var outputModuleFileSplit = outputModuleFile.split("/");
+            outputFileNames.push(outputModuleFileSplit[outputModuleFileSplit.length-1]);
+            var outputFilePath = outputModuleFileSplit.slice(0,-2).join("/") + "/";
+            
+        }
+        return {
+            outputFileNames: outputFileNames,
+            outputFilePath: outputFilePath
+        }
       }
       
-    }
-
     
-    function name(hexCode){
-        return alert(hexToRGB(hexCode))
-        
-    }
-
-    win.onResizing = win.onResize = function (){
-        this.layout.resize();
-    };
-
-    if(win instanceof Window){
-        win.center();
-        win.show();
-    } else {
-        win.layout.layout(true);
-        win.layout.resize();
-    }
+      
 
 
-    }
 
-}(this))
+
+}())
